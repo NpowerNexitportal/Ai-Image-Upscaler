@@ -1,0 +1,5 @@
+{
+  "name": "AI Image Upscaler",
+  "description": "An intuitive web application that leverages the Gemini API to upscale images to 2K, 4K, or 8K resolutions. Simply upload an image, select your desired resolution, and let the AI enhance its quality and detail.",
+  "requestFramePermissions": []
+}
