@@ -79,8 +79,11 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       let errorMessage = err instanceof Error ? err.message : "An unknown error occurred during upscaling.";
-      
-      if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is missing")) {
+      const lowerCaseError = errorMessage.toLowerCase();
+
+      if (lowerCaseError.includes("quota") || lowerCaseError.includes("resource_exhausted")) {
+        errorMessage = "API quota exceeded. Please wait and try again, or check your Google Cloud project billing status.";
+      } else if (lowerCaseError.includes("api key not valid") || lowerCaseError.includes("api key is missing")) {
         errorMessage = "The provided API Key is invalid. Please enter a valid key.";
         try {
           sessionStorage.removeItem(API_KEY_SESSION_STORAGE);
