@@ -9,9 +9,7 @@ import ResultDisplay from './components/ResultDisplay';
 import Loader from './components/Loader';
 import ApiKeySelector from './components/ApiKeySelector';
 
-// FIX: Removed the `declare global` block for `window.aistudio` to resolve a TypeScript error
-// indicating a duplicate or conflicting global type declaration. It is assumed that the type for
-// `window.aistudio` is already provided by the project's environment.
+const API_KEY_SESSION_STORAGE = 'gemini-api-key';
 
 const App: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -20,36 +18,31 @@ const App: React.FC = () => {
   const [selectedFactor, setSelectedFactor] = useState<UpscaleFactor>(UPSCALE_OPTIONS[0].id);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [isKeySelected, setIsKeySelected] = useState<boolean>(false);
+  
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const [isCheckingKey, setIsCheckingKey] = useState<boolean>(true);
 
   useEffect(() => {
-    const checkApiKey = async () => {
-      try {
-        if (window.aistudio) {
-          const hasKey = await window.aistudio.hasSelectedApiKey();
-          setIsKeySelected(hasKey);
-        } else {
-          // Fallback for environments where aistudio is not present.
-          // We assume the key is set via other means (like a .env file in local dev).
-          setIsKeySelected(true);
-        }
-      } catch (e) {
-        console.error("Error checking for API key:", e);
-        // If the check fails, proceed assuming no key is selected.
-        setIsKeySelected(false);
-      } finally {
-        setIsCheckingKey(false);
+    try {
+      const savedKey = sessionStorage.getItem(API_KEY_SESSION_STORAGE);
+      if (savedKey) {
+        setApiKey(savedKey);
       }
-    };
-    checkApiKey();
+    } catch (e) {
+      console.error("Could not read API key from session storage:", e);
+    } finally {
+      setIsCheckingKey(false);
+    }
   }, []);
   
-  const handleSelectApiKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      // Assume selection was successful to avoid race conditions.
-      setIsKeySelected(true);
+  const handleApiKeySubmit = (key: string) => {
+    try {
+      sessionStorage.setItem(API_KEY_SESSION_STORAGE, key);
+      setApiKey(key);
+      setError(null);
+    } catch (e) {
+      console.error("Could not save API key to session storage:", e);
+      setError("Could not save API key. Please ensure session storage is enabled in your browser.");
     }
   };
 
@@ -65,8 +58,8 @@ const App: React.FC = () => {
   };
 
   const handleUpscale = useCallback(async () => {
-    if (!originalFile) {
-      setError("Please upload an image first.");
+    if (!originalFile || !apiKey) {
+      setError("Please upload an image and ensure your API key is set.");
       return;
     }
 
@@ -80,23 +73,27 @@ const App: React.FC = () => {
         throw new Error("Invalid upscale factor selected.");
       }
       
-      const upscaledBase64 = await upscaleImageService(originalFile, selectedOption.promptDetail);
+      const upscaledBase64 = await upscaleImageService(originalFile, selectedOption.promptDetail, apiKey);
       setUpscaledImage(`data:${originalFile.type};base64,${upscaledBase64}`);
 
     } catch (err: any) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred during upscaling.";
-      // Handle the specific error for an invalid/revoked API key.
-      if (errorMessage.includes("Requested entity was not found")) {
-        setError("API Key is invalid. Please select a valid key.");
-        setIsKeySelected(false); // Reset key state to show the selector again.
-      } else {
-        setError(errorMessage);
+      let errorMessage = err instanceof Error ? err.message : "An unknown error occurred during upscaling.";
+      
+      if (errorMessage.includes("API key not valid") || errorMessage.includes("API key is missing")) {
+        errorMessage = "The provided API Key is invalid. Please enter a valid key.";
+        try {
+          sessionStorage.removeItem(API_KEY_SESSION_STORAGE);
+          setApiKey(null);
+        } catch (e) {
+          console.error("Could not remove API key from session storage:", e);
+        }
       }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [originalFile, selectedFactor]);
+  }, [originalFile, selectedFactor, apiKey]);
 
   const canUpscale = originalImage && !isLoading;
 
@@ -108,12 +105,12 @@ const App: React.FC = () => {
     );
   }
 
-  if (!isKeySelected) {
+  if (!apiKey) {
     return (
       <div className="min-h-screen bg-base-100 text-text-primary flex flex-col font-sans">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
-          <ApiKeySelector onSelectApiKey={handleSelectApiKey} />
+          <ApiKeySelector onApiKeySubmit={handleApiKeySubmit} />
         </main>
         <footer className="text-center py-4 text-text-secondary">
           <p>Powered by ObaTECHPRO</p>
