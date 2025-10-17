@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 const fileToGenerativePart = async (file: File) => {
@@ -13,9 +12,6 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const upscaleImage = async (imageFile: File, prompt: string): Promise<string> => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable is not set.");
-  }
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   const imagePart = await fileToGenerativePart(imageFile);

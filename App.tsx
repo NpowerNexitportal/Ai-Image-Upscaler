@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import type { UpscaleFactor } from './types';
 import { UPSCALE_OPTIONS } from './constants';
@@ -99,7 +98,7 @@ const App: React.FC = () => {
         </div>
       </main>
       <footer className="text-center py-4 text-text-secondary">
-        <p>Powered by Gemini API</p>
+        <p>Powered by ObaTECHPRO</p>
       </footer>
     </div>
   );
