@@ -12,7 +12,9 @@ const fileToGenerativePart = async (file: File) => {
 };
 
 export const upscaleImage = async (imageFile: File, prompt: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // FIX: Initialize without an explicit API key.
+  // The SDK will automatically use the key provided by the aistudio environment.
+  const ai = new GoogleGenAI({});
 
   const imagePart = await fileToGenerativePart(imageFile);
   const textPart = { text: prompt };
