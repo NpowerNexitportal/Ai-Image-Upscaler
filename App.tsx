@@ -95,6 +95,13 @@ const App: React.FC = () => {
     }
   }, [originalFile, selectedFactor, apiKey]);
 
+  const handleReset = () => {
+    setOriginalImage(null);
+    setOriginalFile(null);
+    setUpscaledImage(null);
+    setError(null);
+  };
+
   const canUpscale = originalImage && !isLoading;
 
   if (isCheckingKey) {
@@ -136,18 +143,30 @@ const App: React.FC = () => {
               onChange={setSelectedFactor}
               disabled={!originalImage}
             />
-
-            <button
-              onClick={handleUpscale}
-              disabled={!canUpscale}
-              className={`w-full mt-4 py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2
-                ${canUpscale
-                  ? 'bg-gradient-to-r from-brand-primary to-brand-secondary text-white shadow-lg hover:shadow-xl hover:scale-105 transform'
-                  : 'bg-base-300 text-text-secondary cursor-not-allowed'
-                }`}
-            >
-              {isLoading ? 'Upscaling...' : '✨ Upscale Image'}
-            </button>
+            
+            <div className="flex items-stretch gap-3 mt-4">
+              <button
+                onClick={handleUpscale}
+                disabled={!canUpscale}
+                className={`flex-grow py-3 px-6 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center justify-center gap-2
+                  ${canUpscale
+                    ? 'bg-gradient-to-r from-brand-primary to-brand-secondary text-white shadow-lg hover:shadow-xl hover:scale-105 transform'
+                    : 'bg-base-300 text-text-secondary cursor-not-allowed'
+                  }`}
+              >
+                {isLoading ? 'Upscaling...' : '✨ Upscale Image'}
+              </button>
+              {originalImage && !isLoading && (
+                  <button
+                      onClick={handleReset}
+                      title="Start Over"
+                      className="p-3 rounded-lg bg-base-300 text-text-secondary hover:bg-red-900/50 hover:text-red-400 transition-colors duration-200 flex items-center justify-center"
+                      aria-label="Start Over"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                  </button>
+              )}
+            </div>
 
             {error && <p className="text-red-400 mt-4 text-center">{error}</p>}
           </div>
